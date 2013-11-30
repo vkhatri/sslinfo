@@ -1,0 +1,71 @@
+#!/usr/bin/ruby
+require 'optparse'
+
+begin
+  trap(:INT){ puts COLOR.red "\nquit: on user prompt"; exit 1}
+  options = {}
+
+  OptionParser.new do |opts|
+    opts.on("-h", "--help", "help") { |h| options[:help] = true }
+    opts.on("-H", "--hash_output", "return hash format") { |h| options[:hash_output] = true }
+    opts.on("-p", "--port [OPTIONAL]", "server port") { |h| options[:port] = h }
+    opts.on("-t", "--timeout [OPTIONAL]", "server connection timeout") { |h| options[:timeout] = h }
+  end.parse!
+
+  options[:args] = ARGV
+
+  def help
+    print <<EOL; 
+
+  Description:
+    sslinfo is a ruby snippet which provides ssl certificate information for a website/server
+  
+  Usage: 
+    sslinfo <SERVER> <SERVER>:<SERVER_PORT> <SERVER>:<SERVER_PORT>:<SERVER_TIMEOUT> ..
+
+  Options:
+    --help{-h}              help menu
+    --hash_output{-H}       return ruby hash format, useful when parsing result in another ruby program
+    --port{-p}              server ssl port to connect to, default set to 443
+                            Note: can also be defined with server name, as <SERVER>:<SERVER_PORT>
+
+    --timeout{-t}           server ssl connection timeout, default set to 15secs
+                            Note: can also be defined with server name, as <SERVER>:<SERVER_PORT>:<SERVER_TIMEOUT>
+
+  Notes:
+    Server (Arguments) timeout and port overrides default or options --port & --timeout
+
+  Examples:
+    # Check Server SSL Certificate Info:
+        sslinfo www.abcd.zom
+
+    # Define SSL Port:
+        sslinfo www.abcd.com:444
+
+    # Define SSL Port and Timeout:
+        sslinfo www.abcd.com:443:10
+
+    # Set Default SSL Port and Timeout 
+        sslinfo www.abcd.com -p 443 -t 20
+
+EOL
+  end
+
+  if options[:help]
+    help
+
+  elsif ARGV.length == 0
+    puts "no server argument found, usage: sslinfo --help"
+
+  elsif ARGV.length > 1
+    require 'rubygems'
+    require 'sslinfo'
+    SSLInfo.new(options).ssl_info
+
+  else
+    puts "usage: sslinfo --help"
+  end
+
+rescue => error
+  puts "caught exception = #{error.class}; #{error.message}; #{error.backtrace.first}"
+end
